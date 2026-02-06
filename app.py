@@ -7,10 +7,8 @@ import numpy as np
 from datetime import datetime
 import traceback
 
-
-
 app = Flask(__name__)
-app.secret_key = 'ev_routex_secret_2026'
+app.secret_key = 'ev_routex_super_secret_2026_prod'
 
 DATA_FILE = 'data.json'
 
@@ -30,7 +28,6 @@ def load_data():
         with open(DATA_FILE, 'r') as f:
             return json.load(f)
     except:
-        # Auto-reset corrupted data
         print("Resetting corrupted data.json")
         init_data = {
             "admins": [{"username": "admin", "password": "admin@123"}],
@@ -52,6 +49,27 @@ def save_data(data):
 def index():
     return redirect(url_for('login'))
 
+# 🔥 DEBUG ROUTE - FIXED POSITION
+@app.route('/debug')
+def debug():
+    try:
+        import json
+        data = load_data()
+        drivers = data.get('drivers', [])
+        return f"""
+        <h1>🚀 EV ROUTEX DEBUG - PRODUCTION</h1>
+        <h2>✅ LIVE ON RENDER</h2>
+        <h3>Drivers ({len(drivers)}):</h3>
+        <pre style="background:#f8f9fa;padding:1rem;border-radius:8px;overflow:auto;max-height:400px;font-size:12px;">
+{json.dumps(drivers[:5], indent=2)}
+        </pre>
+        <h3>🔑 Session:</h3>
+        <pre>{json.dumps(dict(session), indent=2)}</pre>
+        <p><a href="/login" style="padding:1rem 2rem;background:#10b981;color:white;text-decoration:none;border-radius:8px;font-weight:600;">← Back to Login</a></p>
+        """
+    except Exception as e:
+        return f"<h1>❌ ERROR</h1><p>{str(e)}</p>"
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -60,37 +78,41 @@ def login():
         login_id = request.form.get('login_id', '').upper().strip()
         password = request.form.get('password', '')
         
-        print(f"LOGIN DEBUG: action={action}, type={user_type}, id={login_id}")  # DEBUG
+        print(f"LOGIN DEBUG: action={action}, type={user_type}, id={login_id}")
         
         data = load_data()
         
         if action == 'login':
-            # ADMIN LOGIN
-            if user_type == 'admin' and login_id == 'ADMIN' and password == 'admin@123':
+            # 🔥 FIXED ADMIN LOGIN - accepts 'admin' OR 'ADMIN'
+            if user_type == 'admin' and login_id in ['ADMIN', 'ADMIN@123', 'admin', 'ADMIN123'] and password == 'admin@123':
                 session['user_id'] = 'admin'
                 session['user_type'] = 'admin'
-                print("ADMIN LOGIN SUCCESS")  # DEBUG
+                print("✅ ADMIN LOGIN SUCCESS")
                 return redirect(url_for('admin_dashboard'))
             
-            # DRIVER LOGIN - CHECK VEHICLE NUMBER
+            # DRIVER LOGIN
             for driver in data['drivers']:
                 if driver.get('vehicle_no', '').upper() == login_id:
                     session['user_id'] = driver['vehicle_no']
                     session['user_type'] = 'driver'
                     session['vehicle_no'] = driver['vehicle_no']
-                    print(f"DRIVER LOGIN SUCCESS: {driver['vehicle_no']}")  # DEBUG
+                    print(f"✅ DRIVER LOGIN: {driver['vehicle_no']}")
                     return redirect(url_for('driver_route', vehicle_no=driver['vehicle_no']))
             
-            return render_template('login.html', error="❌ Vehicle number not found!")
+            return render_template('login.html', error="❌ Invalid credentials!")
         
         elif action == 'register':
-            # NEW DRIVER REGISTRATION
             new_driver = {
-                'vehicle_no': request.form.get('vehicle_no', '').upper(),
+                'vehicle_no': request.form.get('vehicle_no', '').upper().strip(),
                 'company': request.form.get('company'),
                 'model': request.form.get('model'),
                 'range': int(request.form.get('range', 0))
             }
+            
+            # Check if driver exists
+            for driver in data['drivers']:
+                if driver['vehicle_no'].upper() == new_driver['vehicle_no']:
+                    return render_template('login.html', error="❌ Driver already registered!")
             
             data['drivers'].append(new_driver)
             save_data(data)
@@ -100,7 +122,7 @@ def login():
             session['user_type'] = 'driver'
             session['vehicle_no'] = new_driver['vehicle_no']
             
-            print(f"NEW DRIVER REGISTERED: {new_driver}")  # DEBUG
+            print(f"✅ NEW DRIVER: {new_driver}")
             return redirect(url_for('driver_route', vehicle_no=new_driver['vehicle_no']))
     
     return render_template('login.html')
@@ -110,18 +132,18 @@ def logout():
     session.clear()
     return redirect(url_for('login'))
 
-    
-
 # Admin routes
 @app.route('/admin/dashboard')
 def admin_dashboard():
     if session.get('user_type') != 'admin':
         return redirect(url_for('login'))
     data = load_data()
-    return render_template('admin_dashboard.html', drivers=len(data['drivers']))
-
-
-
+    drivers_count = len(data['drivers'])
+    assignments_count = sum(1 for orders in data['assignments'].values() if len(orders) > 0)
+    return render_template('admin_dashboard.html', 
+                         drivers=drivers_count,
+                         drivers_list=data['drivers'],
+                         assignments_count=assignments_count)
 
 @app.route('/admin/assign', methods=['GET', 'POST'])
 def admin_assign():
@@ -139,29 +161,19 @@ def admin_assign():
                     kmeans = KMeans(n_clusters=min(len(data['drivers']), len(coords)), random_state=42, n_init=10)
                     clusters = kmeans.fit_predict(coords)
                     
+                    data['assignments'] = {}
                     for i, driver in enumerate(data['drivers']):
                         driver_orders = df[clusters == i].to_dict('records')
                         data['assignments'][driver['vehicle_no']] = driver_orders
                     save_data(data)
-                    return render_template('admin_assign.html', success='Orders assigned successfully!', drivers=data['drivers'])
+                    return render_template('admin_assign.html', success='✅ Orders assigned successfully!', drivers=data['drivers'])
         except Exception as e:
             return render_template('admin_assign.html', error=str(e), drivers=data['drivers'])
     
     return render_template('admin_assign.html', drivers=data['drivers'])
 
 # Driver routes
-@app.route('/driver/dashboard')
-def driver_dashboard():
-    if session.get('user_type') != 'driver':
-        return redirect(url_for('login'))
-    data = load_data()
-    vehicle_no = session['user_id']
-    orders = data['assignments'].get(vehicle_no, [])
-    return render_template('driver_dashboard.html', orders=orders, vehicle_no=vehicle_no)
-
-# Add this to your app.py (replace driver_route route)
-
-@app.route('/driver/route/<vehicle_no>', methods=['GET', 'POST'])
+@app.route('/driver_route/<vehicle_no>', methods=['GET', 'POST'])
 def driver_route(vehicle_no):
     if session.get('user_type') != 'driver' or session['user_id'] != vehicle_no:
         return redirect(url_for('login'))
@@ -170,7 +182,6 @@ def driver_route(vehicle_no):
     orders = data['assignments'].get(vehicle_no, [])
     
     if request.method == 'POST':
-        # Save vehicle stats
         session['vehicle_stats'] = {
             'temp': float(request.form['temp']),
             'load': float(request.form['load']),
@@ -185,22 +196,5 @@ if __name__ == '__main__':
     os.makedirs('static/uploads', exist_ok=True)
     print("🚀 EV ROUTEX Starting... Admin: admin/admin@123")
     app.run(debug=True, host='127.0.0.1', port=5000)
-    @app.route('/debug')
-def debug():
-    try:
-        data = load_data()
-        drivers = data.get('drivers', [])
-        return f"""
-        <h1>🚀 EV ROUTEX DEBUG</h1>
-        <h2>Status: ✅ LIVE ON RENDER</h2>
-        <h3>Drivers ({len(drivers)}):</h3>
-        <pre style="background:#f8f9fa;padding:1rem;border-radius:8px;overflow:auto;max-height:400px;">
-{json.dumps(drivers[:5], indent=2)}  <!-- First 5 drivers -->
-        </pre>
-        <h3>Session:</h3>
-        <pre>{json.dumps(dict(session), indent=2)}</pre>
-        <p><a href="/login" style="padding:1rem;background:#10b981;color:white;border-radius:8px;">← Back to Login</a></p>
-        """
-    except Exception as e:
-        return f"<h1>ERROR: {str(e)}</h1><p>Check Render logs!</p>"
+
 
