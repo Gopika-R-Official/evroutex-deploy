@@ -6,6 +6,11 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 import traceback
+app.secret_key = 'evroutex-super-secret-key-2026-change-in-prod'
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['PERMANENT_SESSION_LIFETIME'] = 3600  # 1 hour
+
 
 app = Flask(__name__)
 app.secret_key = 'ev_routex_secret_2026'
@@ -53,58 +58,53 @@ def index():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        action = request.form.get('action', 'login')
+        action = request.form.get('action')
+        user_type = request.form.get('user_type')
+        login_id = request.form.get('login_id', '').upper().strip()
+        password = request.form.get('password', '')
         
-        if action == 'register':
-            # ✅ NEW DRIVER SELF-REGISTRATION
-            vehicle_no = request.form['vehicle_no'].strip().upper()
-            company = request.form['company']
-            model = request.form['model']
-            range_km = float(request.form['range'])
+        print(f"LOGIN DEBUG: action={action}, type={user_type}, id={login_id}")  # DEBUG
+        
+        data = load_data()
+        
+        if action == 'login':
+            # ADMIN LOGIN
+            if user_type == 'admin' and login_id == 'ADMIN' and password == 'admin@123':
+                session['user_id'] = 'admin'
+                session['user_type'] = 'admin'
+                print("ADMIN LOGIN SUCCESS")  # DEBUG
+                return redirect(url_for('admin_dashboard'))
             
-            data = load_data()
+            # DRIVER LOGIN - CHECK VEHICLE NUMBER
+            for driver in data['drivers']:
+                if driver.get('vehicle_no', '').upper() == login_id:
+                    session['user_id'] = driver['vehicle_no']
+                    session['user_type'] = 'driver'
+                    session['vehicle_no'] = driver['vehicle_no']
+                    print(f"DRIVER LOGIN SUCCESS: {driver['vehicle_no']}")  # DEBUG
+                    return redirect(url_for('driver_route', vehicle_no=driver['vehicle_no']))
             
-            # Check if driver exists
-            if any(d['vehicle_no'] == vehicle_no for d in data['drivers']):
-                return render_template('login.html', error=f'Driver {vehicle_no} already registered!')
-            
-            # Auto-register
+            return render_template('login.html', error="❌ Vehicle number not found!")
+        
+        elif action == 'register':
+            # NEW DRIVER REGISTRATION
             new_driver = {
-                'vehicle_no': vehicle_no,
-                'company': company,
-                'model': model,
-                'range': range_km,
-                'status': 'active',
-                'assigned_orders': []
+                'vehicle_no': request.form.get('vehicle_no', '').upper(),
+                'company': request.form.get('company'),
+                'model': request.form.get('model'),
+                'range': int(request.form.get('range', 0))
             }
+            
             data['drivers'].append(new_driver)
             save_data(data)
             
-            # Auto-login new driver
-            session['user_id'] = vehicle_no
+            # AUTO LOGIN
+            session['user_id'] = new_driver['vehicle_no']
             session['user_type'] = 'driver'
-            return redirect(url_for('driver_dashboard'))
-        
-        else:  # Existing login
-            data = load_data()
-            user_type = request.form['user_type']
-            login_id = request.form['login_id'].strip()
-            password = request.form.get('password', '').strip()
+            session['vehicle_no'] = new_driver['vehicle_no']
             
-            if user_type == 'admin':
-                admin = next((a for a in data['admins'] if a['username'] == login_id and a['password'] == password), None)
-                if admin:
-                    session['user_id'] = login_id
-                    session['user_type'] = 'admin'
-                    return redirect(url_for('admin_dashboard'))
-            else:  # driver login
-                driver = next((d for d in data['drivers'] if d['vehicle_no'] == login_id), None)
-                if driver:
-                    session['user_id'] = login_id
-                    session['user_type'] = 'driver'
-                    return redirect(url_for('driver_dashboard'))
-            
-            return render_template('login.html', error='Invalid credentials!')
+            print(f"NEW DRIVER REGISTERED: {new_driver}")  # DEBUG
+            return redirect(url_for('driver_route', vehicle_no=new_driver['vehicle_no']))
     
     return render_template('login.html')
 
@@ -112,6 +112,16 @@ def login():
 def logout():
     session.clear()
     return redirect(url_for('login'))
+@app.route('/debug')
+def debug():
+    data = load_data()
+    return f"""
+    <h1>DEBUG INFO</h1>
+    <p>Drivers registered: {len(data['drivers'])}</p>
+    <pre>{json.dumps(data['drivers'][:2], indent=2)}</pre>  <!-- First 2 drivers -->
+    <p>Session: {dict(session)}</p>
+    """
+    
 
 # Admin routes
 @app.route('/admin/dashboard')
