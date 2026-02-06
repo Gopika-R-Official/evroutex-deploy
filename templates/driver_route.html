@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+{% block title %}Optimized Route{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-route"></i> EV Route Optimizer</h1>
+    <p>Vehicle: <strong>{{ vehicle_no }}</strong> | Orders: {{ orders|length }}</p>
+</div>
+
+<!-- Vehicle Stats Form (Affects Optimization) -->
+<div class="card">
+    <h2><i class="fas fa-car-battery"></i> Vehicle Status</h2>
+    <form method="POST" class="stats-form">
+        <div class="form-row">
+            <div class="form-group">
+                <label>Temperature (°C)</label>
+                <input type="number" name="temp" step="0.1" value="{{ stats.get('temp', 25.0) }}" required min="10" max="60">
+            </div>
+            <div class="form-group">
+                <label>Current Load (kg)</label>
+                <input type="number" name="load" step="0.1" value="{{ stats.get('load', 0) }}" required min="0" max="50">
+            </div>
+            <div class="form-group">
+                <label>Battery (%)</label>
+                <input type="number" name="battery" value="{{ stats.get('battery', 80) }}" required min="5" max="100">
+            </div>
+        </div>
+        <button type="submit" class="btn-primary">
+            <i class="fas fa-brain"></i> Optimize Route 
+        </button>
+    </form>
+    {% if stats %}
+    <div class="stats-display">
+        <small>📊 Current Stats: {{ stats.temp }}°C | {{ stats.load }}kg | {{ stats.battery }}%</small>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Optimized Route Display -->
+{% if orders and orders|length > 0 %}
+<div class="card">
+    <div class="route-header">
+        <h2><i class="fas fa-map-marked-alt"></i> Optimized Route Sequence</h2>
+        <div class="route-metrics">
+            <span>📏 {{ orders|length + 2 }} stops (incl. Hub)</span>
+            <span>🔋 Battery: {{ stats.get('battery', 80)|int }}%</span>
+            <span>⚡ Optimized for EV efficiency</span>
+        </div>
+    </div>
+
+    <!-- COMPLETE ROUTE: HUB → ORDERS → HUB -->
+    <div id="optimized-route" class="route-list">
+        <!-- HUB START -->
+        <div class="route-stop hub-start">
+            <div class="stop-number start">🏠</div>
+            <div class="stop-info">
+                <strong>📦 HUB (Start)</strong>
+                <br><small>18.5204, 73.8567 (Pune Hub)</small>
+            </div>
+        </div>
+
+        <!-- OPTIMIZED ORDER SEQUENCE -->
+        {% for order in orders %}
+        <div class="route-stop">
+            <div class="stop-number">{{ loop.index }}</div>
+            <div class="stop-info">
+                <strong>{{ order.address or 'Delivery ' ~ loop.index }}</strong>
+                <br><small>📍 {{ order.latitude|round(4) }}, {{ order.longitude|round(4) }}</small>
+                <br><small>📦 {{ order.load_amount }}kg</small>
+            </div>
+            <div class="route-action">
+                <a href="https://www.google.com/maps/dir/?api=1&query={{ order.latitude }},{{ order.longitude }}" 
+                   target="_blank" class="btn-navigate">
+                    <i class="fas fa-directions"></i>
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+
+        <!-- HUB END -->
+        <div class="route-stop hub-end">
+            <div class="stop-number end">🏠</div>
+            <div class="stop-info">
+                <strong>✅ HUB (Return)</strong>
+                <br><small>18.5204, 73.8567</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- FULL ROUTE NAVIGATION (HUB → ORDERS → HUB) -->
+    <div class="route-navigation">
+        <div class="nav-grid">
+            <button onclick="navigateFullRouteWithHub()" class="btn-primary full-route">
+                <i class="fas fa-road"></i> 🚀 FULL ROUTE (Hub → Orders → Hub)
+            </button>
+            <button onclick="copyRouteToClipboard()" class="btn-secondary">
+                📋 Copy Route
+            </button>
+        </div>
+        
+        <div id="route-url" class="route-url" style="display: none;"></div>
+    </div>
+</div>
+
+<script>
+console.log('🚀 Route Optimizer Loaded - {{ orders|length }} orders');
+
+// HUB LOCATION (Pune Central)
+const HUB = { lat: 18.5204, lng: 73.8567 };
+const orders = {{ orders|tojson|safe }};
+
+// 🔥 FULL ROUTE: HUB → Optimized Orders → HUB
+function navigateFullRouteWithHub() {
+    console.log('🚀 Optimizing: HUB → Orders → HUB');
+    
+    // Build complete route: [HUB_START, ORDER1, ORDER2, ..., HUB_END]
+    const fullRoute = [
+        `${HUB.lat},${HUB.lng}`,  // Start Hub
+        ...orders.map(order => `${order.latitude},${order.longitude}`),  // All orders
+        `${HUB.lat},${HUB.lng}`   // Return Hub
+    ];
+    
+    const waypoints = fullRoute.slice(1, -1).join('|'); // Exclude start/end for waypoints
+    const mapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${fullRoute[0]}&destination=${fullRoute[fullRoute.length-1]}&waypoints=${waypoints}&travelmode=driving`;
+    
+    console.log('📱 Full Route URL:', mapsUrl);
+    
+    // Launch Google Maps
+    const opened = window.open(mapsUrl, '_blank');
+    if (!opened) {
+        alert('Popup blocked! Allow popups for 127.0.0.1');
+        return;
+    }
+    
+    // Success feedback
+    showSuccess('✅ Google Maps launched! Follow the optimized route.');
+}
+
+// Copy optimized route to clipboard
+function copyRouteToClipboard() {
+    const fullRoute = [
+        '🏠 HUB (18.5204, 73.8567)',
+        ...orders.map((order, i) => `${i+1}. ${order.address || 'Delivery'} (${order.latitude}, ${order.longitude})`),
+        '🏠 Return to HUB'
+    ].join('\n');
+    
+    navigator.clipboard.writeText(fullRoute).then(() => {
+        showSuccess('📋 Route copied to clipboard!');
+    });
+}
+
+// Success message
+function showSuccess(message) {
+    const btn = event.target;
+    const original = btn.innerHTML;
+    btn.innerHTML = message;
+    btn.style.background = '#10b981';
+    btn.disabled = true;
+    
+    setTimeout(() => {
+        btn.innerHTML = original;
+        btn.style.background = '';
+        btn.disabled = false;
+    }, 2500);
+}
+</script>
+
+{% else %}
+<div class="card">
+    <div style="text-align: center; padding: 3rem;">
+        <i class="fas fa-inbox" style="font-size: 4rem; color: #d1d5db; margin-bottom: 1rem;"></i>
+        <h2>No Orders Assigned</h2>
+        <p>Wait for admin to upload delivery CSV file.</p>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

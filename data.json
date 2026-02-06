@@ -1,0 +1,179 @@
+{
+  "admins": [
+    {
+      "username": "admin",
+      "password": "admin@123"
+    }
+  ],
+  "drivers": [
+    {
+      "vehicle_no": "MH12AD2345",
+      "company": "Ola Electric",
+      "model": "S1 Pro",
+      "range": 181.0,
+      "status": "active",
+      "assigned_orders": []
+    },
+    {
+      "vehicle_no": "TN10AC1234",
+      "company": "Ola Electric",
+      "model": "S1 Pro",
+      "range": 181.0,
+      "status": "active",
+      "assigned_orders": []
+    },
+    {
+      "vehicle_no": "TN10AC1233",
+      "company": "Hero Electric",
+      "model": "Optima CX",
+      "range": 137.0,
+      "status": "active",
+      "assigned_orders": []
+    }
+  ],
+  "deliveries": [],
+  "assignments": {
+    "MH12AD2345": [
+      {
+        "address": "Nagar Road",
+        "latitude": 18.5204,
+        "longitude": 73.8567,
+        "load_amount": 5.2
+      },
+      {
+        "address": "Viman Nagar",
+        "latitude": 18.5626,
+        "longitude": 73.9176,
+        "load_amount": 3.8
+      },
+      {
+        "address": "Koregaon Park",
+        "latitude": 18.5333,
+        "longitude": 73.8999,
+        "load_amount": 2.5
+      },
+      {
+        "address": "Hinjewadi",
+        "latitude": 18.5249,
+        "longitude": 73.903,
+        "load_amount": 2.1
+      },
+      {
+        "address": "Aundh",
+        "latitude": 18.4812,
+        "longitude": 73.864,
+        "load_amount": 3.3
+      },
+      {
+        "address": "Pimpri",
+        "latitude": 18.4812,
+        "longitude": 73.9463,
+        "load_amount": 7.0
+      },
+      {
+        "address": "Chinchwad",
+        "latitude": 18.4616,
+        "longitude": 73.7999,
+        "load_amount": 3.8
+      },
+      {
+        "address": "Swargate",
+        "latitude": 18.5702,
+        "longitude": 73.8981,
+        "load_amount": 5.9
+      },
+      {
+        "address": "Magarpatta",
+        "latitude": 18.4541,
+        "longitude": 73.9019,
+        "load_amount": 9.7
+      },
+      {
+        "address": "Balewadi",
+        "latitude": 18.4925,
+        "longitude": 73.9872,
+        "load_amount": 9.1
+      },
+      {
+        "address": "Sinhagad Road",
+        "latitude": 18.4864,
+        "longitude": 73.9914,
+        "load_amount": 6.4
+      },
+      {
+        "address": "Katraj",
+        "latitude": 18.4867,
+        "longitude": 73.9521,
+        "load_amount": 9.3
+      },
+      {
+        "address": "Camp",
+        "latitude": 18.5108,
+        "longitude": 73.8262,
+        "load_amount": 1.8
+      },
+      {
+        "address": "Kalyaninagar",
+        "latitude": 18.5364,
+        "longitude": 73.9211,
+        "load_amount": 1.4
+      },
+      {
+        "address": "Mundhwa",
+        "latitude": 18.5082,
+        "longitude": 73.86,
+        "load_amount": 3.9
+      }
+    ],
+    "TN10AC1234": [
+      {
+        "address": "Baner",
+        "latitude": 18.6401,
+        "longitude": 73.7849,
+        "load_amount": 5.5
+      },
+      {
+        "address": "Kharadi",
+        "latitude": 18.5964,
+        "longitude": 73.823,
+        "load_amount": 1.3
+      },
+      {
+        "address": "Wakad",
+        "latitude": 18.5697,
+        "longitude": 73.8416,
+        "load_amount": 9.2
+      },
+      {
+        "address": "Shivaji Nagar",
+        "latitude": 18.6232,
+        "longitude": 73.8786,
+        "load_amount": 5.7
+      },
+      {
+        "address": "Hadapsar",
+        "latitude": 18.5916,
+        "longitude": 73.7616,
+        "load_amount": 2.7
+      },
+      {
+        "address": "Bibwewadi",
+        "latitude": 18.644,
+        "longitude": 73.7926,
+        "load_amount": 8.0
+      },
+      {
+        "address": "Pashan",
+        "latitude": 18.6165,
+        "longitude": 73.7663,
+        "load_amount": 9.5
+      },
+      {
+        "address": "Bund Garden",
+        "latitude": 18.555,
+        "longitude": 73.7744,
+        "load_amount": 2.8
+      }
+    ]
+  }
+}

@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Driver Dashboard{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-motorcycle"></i> Driver Dashboard</h1>
+    <p>Vehicle: <strong>{{ vehicle_no }}</strong></p>
+</div>
+
+{% if orders %}
+<div class="card">
+    <h2><i class="fas fa-boxes"></i> Today's Assigned Orders ({{ orders|length }})</h2>
+    <div class="orders-list">
+        {% for order in orders %}
+        <div class="order-item">
+            <div class="order-info">
+                <strong>{{ order.address }}</strong>
+                <br>{{ order.latitude }}, {{ order.longitude }}
+                <br>Load: {{ order.load_amount }} kg
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    <div style="text-align: center; margin-top: 2rem;">
+        <a href="{{ url_for('driver_route', vehicle_no=vehicle_no) }}" class="btn-primary">
+            <i class="fas fa-route"></i> Get Optimized Route
+        </a>
+    </div>
+</div>
+{% else %}
+<div class="card">
+    <h2><i class="fas fa-clock"></i> No Orders Assigned</h2>
+    <p>Check back later for new assignments from admin.</p>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Assign Orders{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-tasks"></i> Assign Delivery Orders</h1>
+</div>
+
+<div class="card">
+    <h2><i class="fas fa-file-upload"></i> Upload CSV File</h2>
+    {% if success %}
+    <div class="alert alert-success">{{ success }}</div>
+    {% endif %}
+    
+    <form method="POST" enctype="multipart/form-data">
+        <div class="form-group">
+            <input type="file" name="csv_file" accept=".csv" required>
+            <small>Format: address,latitude,longitude,load_amount</small>
+        </div>
+        <button type="submit" class="btn-primary">Assign Orders with K-Means</button>
+    </form>
+</div>
+
+<div class="card">
+    <h2><i class="fas fa-users"></i> Available Drivers</h2>
+    <div class="drivers-grid">
+        {% for driver in drivers %}
+        <div class="driver-card">
+            <strong>{{ driver.vehicle_no }}</strong>
+            <br>{{ driver.company }} {{ driver.model }}
+            <br><small>Range: {{ driver.range }} km</small>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

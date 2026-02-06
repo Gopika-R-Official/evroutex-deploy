@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+{% block title %}Login{% endblock %}
+{% block content %}
+<div class="login-container">
+    <div class="login-card">
+        <div class="login-header">
+            <i class="fas fa-bolt"></i>
+            <h1>EV ROUTEX</h1>
+            <p>Electric Vehicle Delivery Optimizer</p>
+        </div>
+        
+        {% if error %}
+        <div class="alert alert-error">{{ error }}</div>
+        {% endif %}
+        
+        <!-- EXISTING USER LOGIN -->
+        <div id="login-form">
+            <form method="POST" class="login-form" id="loginForm">
+                <input type="hidden" name="action" value="login">
+                <div class="user-type-tabs">
+                    <label class="tab active" data-type="admin">
+                        <i class="fas fa-user-shield"></i> Admin
+                    </label>
+                    <label class="tab" data-type="driver">
+                        <i class="fas fa-motorcycle"></i> Driver
+                    </label>
+                </div>
+                
+                <div class="form-group">
+                    <input type="hidden" name="user_type" id="user_type" value="admin">
+                    <input type="text" name="login_id" placeholder="Username / Vehicle No" required>
+                </div>
+                
+                <!-- PASSWORD WITH VIEW ICON -->
+                <div class="form-group password-group admin-only">
+                    <input type="password" name="password" id="password" placeholder="admin@123" required>
+                    <button type="button" class="password-toggle" onclick="togglePassword()">
+                        <i class="fas fa-eye" id="toggle-icon"></i>
+                    </button>
+                    <small class="password-hint">Default: admin@123</small>
+                </div>
+                
+                <button type="submit" class="btn-primary">
+                    <i class="fas fa-sign-in-alt"></i> Login
+                </button>
+            </form>
+            
+            <!-- NEW DRIVER? REGISTER -->
+            <div class="login-footer">
+                <span>New Driver? </span>
+                <a href="#" onclick="showRegister()" class="register-link">Register Here</a>
+            </div>
+        </div>
+        
+        <!-- NEW DRIVER REGISTRATION FORM -->
+        <div id="register-form" style="display: none;">
+            <form method="POST" class="login-form" id="registerForm">
+                <input type="hidden" name="action" value="register">
+                <div class="form-row">
+                    <div class="form-group">
+                        <input type="text" name="vehicle_no" placeholder="Vehicle Number (e.g., MH12AB1234)" required>
+                    </div>
+                    <div class="form-group">
+                        <select name="company" id="company" required onchange="updateModels()">
+                            <option value="">Select Company</option>
+                            <option value="Ola Electric">Ola Electric</option>
+                            <option value="Ather Energy">Ather Energy</option>
+                            <option value="Bounce">Bounce</option>
+                            <option value="Hero Electric">Hero Electric</option>
+                            <option value="Okinawa">Okinawa</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <select name="model" id="model" required onchange="updateRange()">
+                            <option value="">Select Model</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <input type="number" name="range" id="range" placeholder="Range (km)" readonly required>
+                    </div>
+                </div>
+                <button type="submit" class="btn-primary">
+                    <i class="fas fa-motorcycle"></i> Register & Login
+                </button>
+            </form>
+            <div class="login-footer">
+                <a href="#" onclick="showLogin()" class="register-link">← Back to Login</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const models = {
+    'Ola Electric': { 'S1 Pro': 181, 'S1 Air': 101, 'S1 X': 108 },
+    'Ather Energy': { '450X': 150, '450 Plus': 125 },
+    'Bounce': { 'Infinity E1': 85 },
+    'Hero Electric': { 'Optima CX': 137, 'Photon': 102 },
+    'Okinawa': { 'Praise Pro': 80, 'Ridge': 90 }
+};
+
+// Tab switching
+document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', function() {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        this.classList.add('active');
+        document.getElementById('user_type').value = this.dataset.type;
+        document.querySelector('.admin-only').style.display = this.dataset.type === 'admin' ? 'block' : 'none';
+    });
+});
+
+// Toggle forms
+function showRegister() {
+    document.getElementById('login-form').style.display = 'none';
+    document.getElementById('register-form').style.display = 'block';
+}
+
+function showLogin() {
+    document.getElementById('register-form').style.display = 'none';
+    document.getElementById('login-form').style.display = 'block';
+}
+
+// Registration dropdowns
+function updateModels() {
+    const company = document.getElementById('company').value;
+    const modelSelect = document.getElementById('model');
+    const rangeInput = document.getElementById('range');
+    
+    modelSelect.innerHTML = '<option value="">Select Model</option>';
+    rangeInput.value = '';
+    
+    if (company && models[company]) {
+        Object.keys(models[company]).forEach(model => {
+            const option = document.createElement('option');
+            option.value = model;
+            option.textContent = model;
+            modelSelect.appendChild(option);
+        });
+    }
+}
+
+function updateRange() {
+    const company = document.getElementById('company').value;
+    const model = document.getElementById('model').value;
+    const rangeInput = document.getElementById('range');
+    
+    if (company && model && models[company] && models[company][model]) {
+        rangeInput.value = models[company][model];
+    }
+}
+
+// 🔥 PASSWORD VIEW TOGGLE
+function togglePassword() {
+    const passwordField = document.getElementById('password');
+    const toggleIcon = document.getElementById('toggle-icon');
+    
+    if (passwordField.type === 'password') {
+        passwordField.type = 'text';
+        toggleIcon.classList.remove('fa-eye');
+        toggleIcon.classList.add('fa-eye-slash');
+    } else {
+        passwordField.type = 'password';
+        toggleIcon.classList.remove('fa-eye-slash');
+        toggleIcon.classList.add('fa-eye');
+    }
+}
+</script>
+{% endblock %}
