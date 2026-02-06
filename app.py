@@ -6,10 +6,7 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 import traceback
-app.secret_key = 'evroutex-super-secret-key-2026-change-in-prod'
-app.config['SESSION_COOKIE_HTTPONLY'] = True
-app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-app.config['PERMANENT_SESSION_LIFETIME'] = 3600  # 1 hour
+
 
 
 app = Flask(__name__)
@@ -112,15 +109,7 @@ def login():
 def logout():
     session.clear()
     return redirect(url_for('login'))
-@app.route('/debug')
-def debug():
-    data = load_data()
-    return f"""
-    <h1>DEBUG INFO</h1>
-    <p>Drivers registered: {len(data['drivers'])}</p>
-    <pre>{json.dumps(data['drivers'][:2], indent=2)}</pre>  <!-- First 2 drivers -->
-    <p>Session: {dict(session)}</p>
-    """
+
     
 
 # Admin routes
@@ -196,3 +185,22 @@ if __name__ == '__main__':
     os.makedirs('static/uploads', exist_ok=True)
     print("🚀 EV ROUTEX Starting... Admin: admin/admin@123")
     app.run(debug=True, host='127.0.0.1', port=5000)
+    @app.route('/debug')
+def debug():
+    try:
+        data = load_data()
+        drivers = data.get('drivers', [])
+        return f"""
+        <h1>🚀 EV ROUTEX DEBUG</h1>
+        <h2>Status: ✅ LIVE ON RENDER</h2>
+        <h3>Drivers ({len(drivers)}):</h3>
+        <pre style="background:#f8f9fa;padding:1rem;border-radius:8px;overflow:auto;max-height:400px;">
+{json.dumps(drivers[:5], indent=2)}  <!-- First 5 drivers -->
+        </pre>
+        <h3>Session:</h3>
+        <pre>{json.dumps(dict(session), indent=2)}</pre>
+        <p><a href="/login" style="padding:1rem;background:#10b981;color:white;border-radius:8px;">← Back to Login</a></p>
+        """
+    except Exception as e:
+        return f"<h1>ERROR: {str(e)}</h1><p>Check Render logs!</p>"
+
